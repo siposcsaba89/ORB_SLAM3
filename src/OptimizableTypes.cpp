@@ -213,15 +213,15 @@ namespace ORB_SLAM3 {
     }
 
 
-    VertexSim3Expmap::VertexSim3Expmap() : BaseVertex<7, g2o::Sim3>()
+    VertexSim3ExpmapGeomCam::VertexSim3ExpmapGeomCam() : BaseVertex<7, g2o::Sim3>()
     {
         _marginalized=false;
         _fix_scale = false;
     }
 
-    bool VertexSim3Expmap::read(std::istream& is)
+    bool VertexSim3ExpmapGeomCam::read(std::istream& is)
     {
-        g2o::Vector7d cam2world;
+        g2o::Vector7 cam2world;
         for (int i=0; i<6; i++){
             is >> cam2world[i];
         }
@@ -242,10 +242,10 @@ namespace ORB_SLAM3 {
         return true;
     }
 
-    bool VertexSim3Expmap::write(std::ostream& os) const
+    bool VertexSim3ExpmapGeomCam::write(std::ostream& os) const
     {
         g2o::Sim3 cam2world(estimate().inverse());
-        g2o::Vector7d lv=cam2world.log();
+        g2o::Vector7 lv=cam2world.log();
         for (int i=0; i<7; i++){
             os << lv[i] << " ";
         }
@@ -262,7 +262,7 @@ namespace ORB_SLAM3 {
     }
 
     EdgeSim3ProjectXYZ::EdgeSim3ProjectXYZ() :
-            g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, VertexSim3Expmap>()
+            g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, VertexSim3ExpmapGeomCam>()
     {
     }
 
@@ -296,7 +296,7 @@ namespace ORB_SLAM3 {
     }
 
     EdgeInverseSim3ProjectXYZ::EdgeInverseSim3ProjectXYZ() :
-            g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, VertexSim3Expmap>()
+            g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, VertexSim3ExpmapGeomCam>()
     {
     }
 

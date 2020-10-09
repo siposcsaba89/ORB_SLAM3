@@ -104,7 +104,7 @@ public:
     std::vector<MapPoint*> GetAllMapPoints();
     std::vector<MapPoint*> GetReferenceMapPoints();
 
-    vector<Map*> GetAllMaps();
+    std::vector<Map*> GetAllMaps();
 
     int CountMaps();
 

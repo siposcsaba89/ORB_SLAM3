@@ -23,6 +23,8 @@
 #include "Pinhole.h"
 #include "KannalaBrandt8.h"
 
+using namespace std;
+
 namespace ORB_SLAM3
 {
 
@@ -212,7 +214,7 @@ Map* Atlas::GetCurrentMap()
     if(!mpCurrentMap)
         CreateNewMap();
     while(mpCurrentMap->IsBad())
-        usleep(3000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
 
     return mpCurrentMap;
 }

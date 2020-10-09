@@ -30,6 +30,8 @@
 #include <include/CameraModels/Pinhole.h>
 #include <include/CameraModels/KannalaBrandt8.h>
 
+using namespace std;
+
 namespace ORB_SLAM3
 {
 
@@ -85,11 +87,65 @@ Frame::Frame(const Frame &frame)
 }
 
 
-Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, Frame* pPrevF, const IMU::Calib &ImuCalib)
-    :mpcpi(NULL), mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-     mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false),
-     mpCamera(pCamera) ,mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)
+Frame::Frame(const cv::Mat &imLeft,
+    const cv::Mat &imRight,
+    const double &timeStamp,
+    ORBextractor* extractorLeft,
+    ORBextractor* extractorRight,
+    ORBVocabulary* voc,
+    cv::Mat &K,
+    cv::Mat &distCoef,
+    const float &bf,
+    const float &thDepth,
+    GeometricCamera* pCamera,
+    Frame* pPrevF,
+    const IMU::Calib &ImuCalib)
+    : 
+    mpcpi(NULL),
+    mpORBvocabulary(voc),
+    mpORBextractorLeft(extractorLeft),
+    mpORBextractorRight(extractorRight),
+    mTimeStamp(timeStamp),
+    mK(K.clone()),
+    mDistCoef(distCoef.clone()),
+    mbf(bf),
+    mThDepth(thDepth),
+    mImuCalib(ImuCalib),
+    mpImuPreintegrated(NULL),
+    mpPrevFrame(pPrevF),
+    mpImuPreintegratedFrame(NULL),
+    mpReferenceKF(nullptr),
+    mbImuPreintegrated(false),
+    mpCamera(pCamera) ,
+    mpCamera2(nullptr),
+    mTimeStereoMatch(0),
+    mTimeORB_Ext(0)
 {
+    int alma = 34;
+    
+    // This is done only for the first Frame (or after a change in the calibration)
+    if (mbInitialComputations)
+    {
+        ComputeImageBounds(imLeft);
+
+        mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS) / (mnMaxX - mnMinX);
+        mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS) / (mnMaxY - mnMinY);
+
+
+
+        fx = K.at<float>(0, 0);
+        fy = K.at<float>(1, 1);
+        cx = K.at<float>(0, 2);
+        cy = K.at<float>(1, 2);
+        invfx = 1.0f / fx;
+        invfy = 1.0f / fy;
+
+        mbInitialComputations = false;
+    }
+
+    mb = mbf / fx;
+
+
     // Frame ID
     mnId=nNextId++;
 
@@ -138,30 +194,7 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     mvbOutlier = vector<bool>(N,false);
     mmProjectPoints.clear();// = map<long unsigned int, cv::Point2f>(N, static_cast<cv::Point2f>(NULL));
     mmMatchedInImage.clear();
-
-
-    // This is done only for the first Frame (or after a change in the calibration)
-    if(mbInitialComputations)
-    {
-        ComputeImageBounds(imLeft);
-
-        mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
-        mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
-
-
-
-        fx = K.at<float>(0,0);
-        fy = K.at<float>(1,1);
-        cx = K.at<float>(0,2);
-        cy = K.at<float>(1,2);
-        invfx = 1.0f/fx;
-        invfy = 1.0f/fy;
-
-        mbInitialComputations=false;
-    }
-
-    mb = mbf/fx;
-
+    
     if(pPrevF)
     {
         if(!pPrevF->mVw.empty())
@@ -171,11 +204,11 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     {
         mVw = cv::Mat::zeros(3,1,CV_32F);
     }
-
+    
     AssignFeaturesToGrid();
-
+    
     mpMutexImu = new std::mutex();
-
+    
     //Set no stereo fisheye information
     Nleft = -1;
     Nright = -1;
@@ -194,6 +227,26 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false),
      mpCamera(pCamera),mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)
 {
+    // This is done only for the first Frame (or after a change in the calibration)
+    if (mbInitialComputations)
+    {
+        ComputeImageBounds(imGray);
+
+        mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS) / static_cast<float>(mnMaxX - mnMinX);
+        mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS) / static_cast<float>(mnMaxY - mnMinY);
+
+        fx = K.at<float>(0, 0);
+        fy = K.at<float>(1, 1);
+        cx = K.at<float>(0, 2);
+        cy = K.at<float>(1, 2);
+        invfx = 1.0f / fx;
+        invfy = 1.0f / fy;
+
+        mbInitialComputations = false;
+    }
+
+    mb = mbf / fx;
+
     // Frame ID
     mnId=nNextId++;
 
@@ -234,26 +287,6 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
 
     mvbOutlier = vector<bool>(N,false);
 
-    // This is done only for the first Frame (or after a change in the calibration)
-    if(mbInitialComputations)
-    {
-        ComputeImageBounds(imGray);
-
-        mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
-        mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
-
-        fx = K.at<float>(0,0);
-        fy = K.at<float>(1,1);
-        cx = K.at<float>(0,2);
-        cy = K.at<float>(1,2);
-        invfx = 1.0f/fx;
-        invfy = 1.0f/fy;
-
-        mbInitialComputations=false;
-    }
-
-    mb = mbf/fx;
-
     mpMutexImu = new std::mutex();
 
     //Set no stereo fisheye information
@@ -277,6 +310,27 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera),
      mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)
 {
+    // This is done only for the first Frame (or after a change in the calibration)
+    if (mbInitialComputations)
+    {
+        ComputeImageBounds(imGray);
+
+        mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS) / static_cast<float>(mnMaxX - mnMinX);
+        mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS) / static_cast<float>(mnMaxY - mnMinY);
+
+        fx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0, 0);
+        fy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1, 1);
+        cx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0, 2);
+        cy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1, 2);
+        invfx = 1.0f / fx;
+        invfy = 1.0f / fy;
+
+        mbInitialComputations = false;
+    }
+
+
+    mb = mbf / fx;
+
     // Frame ID
     mnId=nNextId++;
 
@@ -318,27 +372,6 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     mmMatchedInImage.clear();
 
     mvbOutlier = vector<bool>(N,false);
-
-    // This is done only for the first Frame (or after a change in the calibration)
-    if(mbInitialComputations)
-    {
-        ComputeImageBounds(imGray);
-
-        mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
-        mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
-
-        fx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,0);
-        fy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,1);
-        cx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,2);
-        cy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,2);
-        invfx = 1.0f/fx;
-        invfy = 1.0f/fy;
-
-        mbInitialComputations=false;
-    }
-
-
-    mb = mbf/fx;
 
     //Set no stereo fisheye information
     Nleft = -1;
@@ -384,7 +417,7 @@ void Frame::AssignFeaturesToGrid()
         }
 
 
-
+    if (Nleft < -1) Nleft = -1;
     for(int i=0;i<N;i++)
     {
         const cv::KeyPoint &kp = (Nleft == -1) ? mvKeysUn[i]
@@ -779,10 +812,10 @@ void Frame::ComputeImageBounds(const cv::Mat &imLeft)
         mat=mat.reshape(1);
 
         // Undistort corners
-        mnMinX = min(mat.at<float>(0,0),mat.at<float>(2,0));
-        mnMaxX = max(mat.at<float>(1,0),mat.at<float>(3,0));
-        mnMinY = min(mat.at<float>(0,1),mat.at<float>(1,1));
-        mnMaxY = max(mat.at<float>(2,1),mat.at<float>(3,1));
+        mnMinX = std::min(mat.at<float>(0,0),mat.at<float>(2,0));
+        mnMaxX = std::max(mat.at<float>(1,0),mat.at<float>(3,0));
+        mnMinY = std::min(mat.at<float>(0,1),mat.at<float>(1,1));
+        mnMaxY = std::max(mat.at<float>(2,1),mat.at<float>(3,1));
     }
     else
     {
@@ -795,8 +828,8 @@ void Frame::ComputeImageBounds(const cv::Mat &imLeft)
 
 void Frame::ComputeStereoMatches()
 {
-    mvuRight = vector<float>(N,-1.0f);
-    mvDepth = vector<float>(N,-1.0f);
+    mvuRight = std::vector<float>(N,-1.0f);
+    mvDepth = std::vector<float>(N,-1.0f);
 
     const int thOrbDist = (ORBmatcher::TH_HIGH+ORBmatcher::TH_LOW)/2;
 
@@ -957,18 +990,25 @@ void Frame::ComputeStereoMatches()
         }
     }
 
-    sort(vDistIdx.begin(),vDistIdx.end());
-    const float median = vDistIdx[vDistIdx.size()/2].first;
-    const float thDist = 1.5f*1.4f*median;
-
-    for(int i=vDistIdx.size()-1;i>=0;i--)
+    if (vDistIdx.empty())
     {
-        if(vDistIdx[i].first<thDist)
-            break;
-        else
+        std::cout << "Palacsinta" << std::endl;
+    }
+    else
+    {
+        sort(vDistIdx.begin(), vDistIdx.end());
+        const float median = vDistIdx[vDistIdx.size() / 2].first;
+        const float thDist = 1.5f * 1.4f * median;
+
+        for (int i = vDistIdx.size() - 1; i >= 0; i--)
         {
-            mvuRight[vDistIdx[i].second]=-1;
-            mvDepth[vDistIdx[i].second]=-1;
+            if (vDistIdx[i].first < thDist)
+                break;
+            else
+            {
+                mvuRight[vDistIdx[i].second] = -1;
+                mvDepth[vDistIdx[i].second] = -1;
+            }
         }
     }
 }

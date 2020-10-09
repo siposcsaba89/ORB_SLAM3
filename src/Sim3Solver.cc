@@ -26,14 +26,16 @@
 #include "KeyFrame.h"
 #include "ORBmatcher.h"
 
-#include "Thirdparty/DBoW2/DUtils/Random.h"
+#include "Random.h"
+
+using namespace std;
 
 namespace ORB_SLAM3
 {
 
 
-Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> &vpMatched12, const bool bFixScale,
-                       vector<KeyFrame*> vpKeyFrameMatchedMP):
+Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const std::vector<MapPoint *> &vpMatched12, const bool bFixScale,
+                       std::vector<KeyFrame*> vpKeyFrameMatchedMP):
     mnIterations(0), mnBestInliers(0), mbFixScale(bFixScale),
     pCamera1(pKF1->mpCamera), pCamera2(pKF2->mpCamera)
 {
@@ -41,13 +43,13 @@ Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> 
     if(vpKeyFrameMatchedMP.empty())
     {
         bDifferentKFs = true;
-        vpKeyFrameMatchedMP = vector<KeyFrame*>(vpMatched12.size(), pKF2);
+        vpKeyFrameMatchedMP = std::vector<KeyFrame*>(vpMatched12.size(), pKF2);
     }
 
     mpKF1 = pKF1;
     mpKF2 = pKF2;
 
-    vector<MapPoint*> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
+    std::vector<MapPoint*> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
 
     mN1 = vpMatched12.size();
 
@@ -304,7 +306,7 @@ cv::Mat Sim3Solver::find(vector<bool> &vbInliers12, int &nInliers)
 
 void Sim3Solver::ComputeCentroid(cv::Mat &P, cv::Mat &Pr, cv::Mat &C)
 {
-    cv::reduce(P,C,1,CV_REDUCE_SUM);
+    cv::reduce(P,C,1,cv::REDUCE_SUM);
     C = C/P.cols;
 
     for(int i=0; i<P.cols; i++)

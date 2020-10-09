@@ -33,6 +33,8 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 
+using namespace std;
+
 namespace ORB_SLAM3
 {
 
@@ -77,10 +79,14 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //----
     //Load ORB Vocabulary
     cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
-
+    
     mpVocabulary = new ORBVocabulary();
-    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-    if(!bVocLoad)
+    //mpVocabulary->loadFromTextFile(strVocFile);
+    mpVocabulary->loadFromBinaryFile(strVocFile);
+    //std::cout << "vocabulary saving:" << std::endl;
+    //mpVocabulary->saveToBinary(strVocFile + ".bin");
+    //std::cout << "Vocabulary saved \n" << std::endl;
+    if (mpVocabulary->empty())
     {
         cerr << "Wrong path to vocabulary. " << endl;
         cerr << "Falied to open at: " << strVocFile << endl;
@@ -237,7 +243,7 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
             // Wait until Local Mapping has effectively stopped
             while(!mpLocalMapper->isStopped())
             {
-                usleep(1000);
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
             mpTracker->InformOnlyTracking(true);
@@ -303,7 +309,7 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
             // Wait until Local Mapping has effectively stopped
             while(!mpLocalMapper->isStopped())
             {
-                usleep(1000);
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
             mpTracker->InformOnlyTracking(true);
@@ -361,7 +367,7 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const
             // Wait until Local Mapping has effectively stopped
             while(!mpLocalMapper->isStopped())
             {
-                usleep(1000);
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
             mpTracker->InformOnlyTracking(true);
@@ -453,7 +459,7 @@ void System::Shutdown()
     {
         mpViewer->RequestFinish();
         while(!mpViewer->isFinished())
-            usleep(5000);
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
     // Wait until all thread have effectively stopped
@@ -468,7 +474,7 @@ void System::Shutdown()
             cout << "break anyway..." << endl;
             break;
         }
-        usleep(5000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
     if(mpViewer)

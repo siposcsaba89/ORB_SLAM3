@@ -22,6 +22,8 @@
 
 #include <mutex>
 
+using namespace std;
+
 namespace ORB_SLAM3
 {
 
@@ -326,7 +328,7 @@ void Viewer::Run()
         {
             while(isStopped())
             {
-                usleep(3000);
+                std::this_thread::sleep_for(std::chrono::milliseconds(3));
             }
         }
 
