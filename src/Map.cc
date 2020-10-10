@@ -371,7 +371,7 @@ void Map::PrintEssentialGraph()
     vector<KeyFrame*> vpOriginKFs = mvpKeyFrameOrigins;
     int count=0;
     cout << "Number of origin KFs: " << vpOriginKFs.size() << endl;
-    KeyFrame* pFirstKF;
+    KeyFrame* pFirstKF = nullptr;
     for(KeyFrame* pKFi : vpOriginKFs)
     {
         if(!pFirstKF)
@@ -417,7 +417,7 @@ bool Map::CheckEssentialGraph(){
     vector<KeyFrame*> vpOriginKFs = mvpKeyFrameOrigins;
     int count=0;
     cout << "Number of origin KFs: " << vpOriginKFs.size() << endl;
-    KeyFrame* pFirstKF;
+    KeyFrame* pFirstKF = nullptr;
     for(KeyFrame* pKFi : vpOriginKFs)
     {
         if(!pFirstKF)

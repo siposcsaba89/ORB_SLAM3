@@ -40,7 +40,7 @@ class KeyFrameDatabase;
 
 class Map
 {
-    friend class boost::serialization::access;
+    friend class ::boost::serialization::access;
 
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
@@ -50,8 +50,8 @@ class Map
         ar & mnMaxKFid;
         ar & mnBigChangeIdx;
         // Set of KeyFrames and MapPoints, in this version the set serializator is not working
-        //ar & mspKeyFrames;
-        //ar & mspMapPoints;
+        ar & mspKeyFrames;
+        ar & mspMapPoints;
 
         ar & mvpBackupKeyFrames;
         ar & mvpBackupMapPoints;

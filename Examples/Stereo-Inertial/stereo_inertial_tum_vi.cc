@@ -23,7 +23,7 @@
 #include <ctime>
 #include <sstream>
 
-#include<opencv2/core/core.hpp>
+#include<opencv2/opencv.hpp>
 
 #include<System.h>
 #include "ImuTypes.h"
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
     if(argc < 7) 
     {
-        cerr << endl << "Usage: ./stereo_inertial_tum_vi path_to_vocabulary path_to_settings path_to_image_folder_1 path_to_image_folder_2 path_to_times_file path_to_imu_data (trajectory_file_name)" << endl;
+        cerr << endl << "Usage: ./stereo_inertial_tum_vi path_to_vocabulary path_to_settings path_to_image_folder_1 path_to_image_folder_2 path_to_times_file path_to_imu_data (trajectory_file_name) (map_loading_name)" << endl;
         return 1;
     }
 
@@ -119,7 +119,12 @@ int main(int argc, char **argv)
     cout << "IMU data in the sequence: " << nImu << endl << endl;*/
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_STEREO, true, 0, file_name);
+    std::string map_file = "";
+    if (argc >= 9)
+        map_file = argv[8];
+    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_STEREO, true, 0, file_name, map_file);
+
+    //SLAM.LoadMap("mymap.orbmap");
 
     int proccIm = 0;
     for (seq = 0; seq<num_seq; seq++)
@@ -203,6 +208,12 @@ int main(int argc, char **argv)
 
             if(ttrack<T)
                 std::this_thread::sleep_for(std::chrono::microseconds(int64_t((T-ttrack)*1e6))); // 1e6
+
+            cv::imshow("im left", imLeft);
+            int key = cv::waitKey(1);
+            if (key == 27)
+                break;
+
         }
         if(seq < num_seq - 1)
         {
@@ -210,11 +221,14 @@ int main(int argc, char **argv)
 
             SLAM.ChangeDataset();
         }
+
     }
 
 
     // Stop all threads
     SLAM.Shutdown();
+
+    SLAM.SaveMap("mymap.orbmap");
 
     // Tracking time statistics
 

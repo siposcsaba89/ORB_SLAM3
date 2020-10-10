@@ -22,9 +22,7 @@
 #include<algorithm>
 #include<fstream>
 #include<chrono>
-
-#include<opencv2/core/core.hpp>
-
+#include <opencv2/opencv.hpp>
 #include<System.h>
 
 using namespace std;
@@ -91,7 +89,7 @@ int main(int argc, char **argv)
         {
 
             // Read image from file
-            im = cv::imread(vstrImageFilenames[seq][ni],CV_LOAD_IMAGE_UNCHANGED);
+            im = cv::imread(vstrImageFilenames[seq][ni], cv::IMREAD_UNCHANGED);
             double tframe = vTimestampsCam[seq][ni];
 
             if(im.empty())
@@ -129,7 +127,7 @@ int main(int argc, char **argv)
                 T = tframe-vTimestampsCam[seq][ni-1];
 
             if(ttrack<T)
-                usleep((T-ttrack)*1e6); // 1e6
+                std::this_thread::sleep_for(std::chrono::milliseconds(int64_t((T-ttrack)*1e6))); // 1e6
         }
 
         if(seq < num_seq - 1)

@@ -21,9 +21,8 @@
 #include<fstream>
 #include<chrono>
 #include<iomanip>
-#include <unistd.h>
 
-#include<opencv2/core/core.hpp>
+#include<opencv2/opencv.hpp>
 
 #include"System.h"
 #include "Converter.h"
@@ -146,7 +145,7 @@ int main(int argc, char **argv)
                 T = tframe-vTimestampsCam[seq][ni-1];
 
             if(ttrack<T)
-                usleep((T-ttrack)*1e6); // 1e6
+                std::this_thread::sleep_for(std::chrono::microseconds(int64_t((T-ttrack)*1e6))); // 1e6
 
         }
         if(seq < num_seq - 1)

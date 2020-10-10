@@ -255,6 +255,19 @@ private:
 
     struct integrable
     {
+        template<class Archive>
+        void serialize(Archive& ar, const unsigned int version)
+        {
+            ar& a.x;
+            ar& a.y;
+            ar& a.z;
+            ar& w.x;
+            ar& w.y;
+            ar& w.z;
+            ar& t;
+        }
+
+        integrable() {}
         integrable(const cv::Point3f &a_, const cv::Point3f &w_ , const float &t_):a(a_),w(w_),t(t_){}
         cv::Point3f a;
         cv::Point3f w;

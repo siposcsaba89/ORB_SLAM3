@@ -179,6 +179,7 @@ void Viewer::Run()
     bool bFollow = true;
     bool bLocalizationMode = false;
     bool bStepByStep = false;
+    std::cout <<"alma " << bStepByStep << std::endl;
     bool bCameraView = true;
 
     if(mpTracker->mSensor == mpSystem->MONOCULAR || mpTracker->mSensor == mpSystem->STEREO || mpTracker->mSensor == mpSystem->RGBD)
@@ -267,6 +268,7 @@ void Viewer::Run()
 
         if(menuStepByStep && !bStepByStep)
         {
+            std::cout <<  "bStepByStep = true;" << std::endl;
             mpTracker->SetStepByStep(true);
             bStepByStep = true;
         }
@@ -278,6 +280,7 @@ void Viewer::Run()
 
         if(menuStep)
         {
+            std::cout << "Menu step" << std::endl;
             mpTracker->mbStep = true;
             menuStep = false;
         }

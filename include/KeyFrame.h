@@ -72,7 +72,7 @@ class KeyFrame
             const unsigned int data_size = rows * cols * mat.elemSize();
             ar & boost::serialization::make_array(mat.ptr(), data_size);
         } else {
-            const unsigned int row_size = cols*mat.elemSize();
+            const unsigned int row_size = mat.empty() ? 0 : cols*mat.elemSize();
             for (int i = 0; i < rows; i++) {
                 ar & boost::serialization::make_array(mat.ptr(i), row_size);
             }
@@ -94,6 +94,21 @@ class KeyFrame
             *ptr = matAux;
         }
     }
+
+    template<class Archive>
+    void serializeBowVector(Archive& ar, DBoW2::BowVector& bow_vec, const unsigned int version)
+    {
+        ar& boost::serialization::base_object<std::map<DBoW2::WordId, DBoW2::WordValue>>(bow_vec);
+    }
+
+    template<class Archive>
+    void serializeFeatureVector(Archive& ar, DBoW2::FeatureVector& feature_vec, const unsigned int version)
+    {
+        ar& boost::serialization::base_object<std::map<DBoW2::NodeId, std::vector<unsigned int> >>(feature_vec);
+    }
+
+
+    
 
     friend class boost::serialization::access;
     template<class Archive>
@@ -214,8 +229,10 @@ class KeyFrame
         ar & const_cast<vector<float>& >(mvDepth);
         serializeMatrix(ar,mDescriptors,version);
         // BOW
-        ar & mBowVec;
-        ar & mFeatVec;
+        serializeBowVector(ar, mBowVec, version);
+        //ar & mBowVec;
+        serializeFeatureVector(ar, mFeatVec, version);
+        //ar & mFeatVec;
         // Pose relative to parent
         serializeMatrix(ar,mTcp,version);
         // Scale
@@ -257,7 +274,7 @@ class KeyFrame
         ar & mnBackupIdCamera2;
 
         // Fisheye variables
-        /*ar & mvLeftToRightMatch;
+        ar & mvLeftToRightMatch;
         ar & mvRightToLeftMatch;
         ar & NLeft;
         ar & NRight;
@@ -274,7 +291,7 @@ class KeyFrame
         ar & mBackupNextKFId;
         ar & bImu;
         serializeMatrix(ar, Vw, version);
-        serializeMatrix(ar, Owb, version);*/
+        serializeMatrix(ar, Owb, version);
 
     }
 
@@ -590,7 +607,7 @@ public:
     //KeyPoints in the right image (for stereo fisheye, coordinates are needed)
     const std::vector<cv::KeyPoint> mvKeysRight;
 
-    const int NLeft, NRight;
+    int NLeft, NRight;
 
     std::vector< std::vector <std::vector<size_t> > > mGridRight;
 

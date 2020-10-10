@@ -23,7 +23,7 @@
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
-#include <openssl/md5.h>
+//#include <openssl/md5.h>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -32,6 +32,17 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
+
+#include "Tracking.h"
+#include "FrameDrawer.h"
+#include "MapDrawer.h"
+#include "Atlas.h"
+#include "LocalMapping.h"
+#include "LoopClosing.h"
+#include "KeyFrameDatabase.h"
+#include "ORBVocabulary.h"
+#include "Viewer.h"
+
 
 using namespace std;
 
@@ -76,45 +87,21 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     bool loadedAtlas = false;
 
-    //----
-    //Load ORB Vocabulary
-    cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
-    
-    mpVocabulary = new ORBVocabulary();
-    //mpVocabulary->loadFromTextFile(strVocFile);
-    mpVocabulary->loadFromBinaryFile(strVocFile);
-    //std::cout << "vocabulary saving:" << std::endl;
-    //mpVocabulary->saveToBinary(strVocFile + ".bin");
-    //std::cout << "Vocabulary saved \n" << std::endl;
-    if (mpVocabulary->empty())
-    {
-        cerr << "Wrong path to vocabulary. " << endl;
-        cerr << "Falied to open at: " << strVocFile << endl;
-        exit(-1);
-    }
-    cout << "Vocabulary loaded!" << endl << endl;
 
-    //Create KeyFrame Database
-    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-
-    //Create the Atlas
-    //mpMap = new Map();
-    mpAtlas = new Atlas(0);
-    //----
-
-    /*if(strLoadingFile.empty())
+    if(strLoadingFile.empty())
     {
         //Load ORB Vocabulary
         cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
 
         mpVocabulary = new ORBVocabulary();
-        bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-        if(!bVocLoad)
+        mpVocabulary->loadFromBinaryFile(strVocFile);
+        if(mpVocabulary->empty())
         {
             cerr << "Wrong path to vocabulary. " << endl;
             cerr << "Falied to open at: " << strVocFile << endl;
             exit(-1);
         }
+        mStrVocabularyFilePath = strVocFile;
         cout << "Vocabulary loaded!" << endl << endl;
 
         //Create KeyFrame Database
@@ -130,8 +117,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
 
         mpVocabulary = new ORBVocabulary();
-        bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-        if(!bVocLoad)
+        mpVocabulary->loadFromBinaryFile(strVocFile);
+        if(mpVocabulary->empty())
         {
             cerr << "Wrong path to vocabulary. " << endl;
             cerr << "Falied to open at: " << strVocFile << endl;
@@ -143,14 +130,14 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
         // Load the file with an earlier session
         //clock_t start = clock();
-        bool isRead = LoadAtlas(strLoadingFile,BINARY_FILE);
+        mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+        bool isRead = LoadMap(strLoadingFile);
 
         if(!isRead)
         {
             cout << "Error to load the file, please try with other session file or vocabulary file" << endl;
             exit(-1);
         }
-        mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
         mpAtlas->SetKeyFrameDababase(mpKeyFrameDatabase);
         mpAtlas->SetORBVocabulary(mpVocabulary);
@@ -166,7 +153,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         //cout << "Binary file read in " << msElapsed << " ms" << endl;
 
         //usleep(10*1000*1000);
-    }*/
+    }
 
 
     if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
@@ -804,6 +791,116 @@ void System::SaveTrajectoryKITTI(const string &filename)
     f.close();
 }
 
+void System::SaveMap(const string& filename)
+{
+    eFileType type = eFileType::TEXT_FILE;
+    if (!filename.empty())
+    {
+        //clock_t start = clock();
+
+        // Save the current session
+        mpAtlas->PreSave();
+        mpKeyFrameDatabase->PreSave();
+
+        string pathSaveFileName = "./";
+        pathSaveFileName = pathSaveFileName.append(filename);
+        pathSaveFileName = pathSaveFileName.append(".osa");
+
+        string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+        std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
+        string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
+
+        if (type == TEXT_FILE) // File text
+        {
+            cout << "Starting to write the save text file " << endl;
+            std::remove(pathSaveFileName.c_str());
+            std::ofstream ofs(pathSaveFileName, std::ios::binary);
+            boost::archive::text_oarchive oa(ofs);
+
+            oa << strVocabularyName;
+            oa << strVocabularyChecksum;
+            oa << mpAtlas;
+            oa << mpKeyFrameDatabase;
+            cout << "End to write the save text file" << endl;
+        }
+        else if (type == BINARY_FILE) // File binary
+        {
+            cout << "Starting to write the save binary file" << endl;
+            std::remove(pathSaveFileName.c_str());
+            std::ofstream ofs(pathSaveFileName, std::ios::binary);
+            boost::archive::binary_oarchive oa(ofs);
+            oa << strVocabularyName;
+            oa << strVocabularyChecksum;
+            oa << mpAtlas;
+            oa << mpKeyFrameDatabase;
+            cout << "End to write save binary file" << endl;
+        }
+
+        //clock_t timeElapsed = clock() - start;
+        //unsigned msElapsed = timeElapsed / (CLOCKS_PER_SEC / 1000);
+        //cout << "Binary file saved in " << msElapsed << " ms" << endl;
+    }
+}
+
+bool System::LoadMap(const string& filename)
+{
+    string strFileVoc, strVocChecksum;
+    bool isRead = false;
+    eFileType type = eFileType::TEXT_FILE;
+
+    if (type == TEXT_FILE) // File text
+    {
+        cout << "Starting to read the save text file " << endl;
+        std::ifstream ifs(filename, std::ios::binary);
+        if (!ifs.good())
+        {
+            cout << "Load file not found" << endl;
+            return false;
+        }
+        boost::archive::text_iarchive ia(ifs);
+        ia >> strFileVoc;
+        ia >> strVocChecksum;
+        ia >> mpAtlas;
+        ia >> mpKeyFrameDatabase;
+        cout << "End to load the save text file " << endl;
+        isRead = true;
+    }
+    else if (type == BINARY_FILE) // File binary
+    {
+        cout << "Starting to read the save binary file" << endl;
+        std::ifstream ifs(filename, std::ios::binary);
+        if (!ifs.good())
+        {
+            cout << "Load file not found" << endl;
+            return false;
+        }
+        boost::archive::binary_iarchive ia(ifs);
+        ia >> strFileVoc;
+        ia >> strVocChecksum;
+        ia >> mpAtlas;
+        ia >> mpKeyFrameDatabase;
+        cout << "End to load the save binary file" << endl;
+        isRead = true;
+    }
+
+    if (isRead)
+    {
+        //Check if the vocabulary is the same
+        string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+
+        if (strInputVocabularyChecksum.compare(strVocChecksum) != 0)
+        {
+            cout << "The vocabulary load isn't the same which the load session was created " << endl;
+            cout << "-Vocabulary name: " << strFileVoc << endl;
+            return false; // Both are differents
+        }
+        return true;
+    }
+    return false;
+}
+
+
+
 
 void System::SaveDebugData(const int &initIdx)
 {
@@ -921,6 +1018,47 @@ void System::ChangeDataset()
     mpTracker->NewDataset();
 }
 
+
+std::string System::CalculateCheckSum(const std::string & filename, int type)
+{
+    //string checksum = "";
+
+   // unsigned char c[MD5_DIGEST_LENGTH];
+   //
+   // std::ios_base::openmode flags = std::ios::in;
+   // if (type == BINARY_FILE) // Binary file
+   //     flags = std::ios::in | std::ios::binary;
+   //
+   // ifstream f(filename.c_str(), flags);
+   // if (!f.is_open())
+   // {
+   //     cout << "[E] Unable to open the in file " << filename << " for Md5 hash." << endl;
+   //     return checksum;
+   // }
+   //
+   // MD5_CTX md5Context;
+   // char buffer[1024];
+   //
+   // MD5_Init(&md5Context);
+   // while (int count = f.readsome(buffer, sizeof(buffer)))
+   // {
+   //     MD5_Update(&md5Context, buffer, count);
+   // }
+   //
+   // f.close();
+   //
+   // MD5_Final(c, &md5Context);
+   //
+   // for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
+   // {
+   //     char aux[10];
+   //     sprintf(aux, "%02x", c[i]);
+   //     checksum = checksum + aux;
+   // }
+
+    return filename;
+}
+
 /*void System::SaveAtlas(int type){
     cout << endl << "Enter the name of the file if you want to save the current Atlas session. To exit press ENTER: ";
     string saveFileName;
@@ -1030,45 +1168,7 @@ bool System::LoadAtlas(string filename, int type)
     return false;
 }
 
-string System::CalculateCheckSum(string filename, int type)
-{
-    string checksum = "";
-
-    unsigned char c[MD5_DIGEST_LENGTH];
-
-    std::ios_base::openmode flags = std::ios::in;
-    if(type == BINARY_FILE) // Binary file
-        flags = std::ios::in | std::ios::binary;
-
-    ifstream f(filename.c_str(), flags);
-    if ( !f.is_open() )
-    {
-        cout << "[E] Unable to open the in file " << filename << " for Md5 hash." << endl;
-        return checksum;
-    }
-
-    MD5_CTX md5Context;
-    char buffer[1024];
-
-    MD5_Init (&md5Context);
-    while ( int count = f.readsome(buffer, sizeof(buffer)))
-    {
-        MD5_Update(&md5Context, buffer, count);
-    }
-
-    f.close();
-
-    MD5_Final(c, &md5Context );
-
-    for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
-    {
-        char aux[10];
-        sprintf(aux,"%02x", c[i]);
-        checksum = checksum + aux;
-    }
-
-    return checksum;
-}*/
+*/
 
 } //namespace ORB_SLAM
 

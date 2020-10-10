@@ -260,7 +260,7 @@ protected:
     Viewer* mpViewer;
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
-    bool bStepByStep;
+    bool bStepByStep = false;
 
     //Atlas
     Atlas* mpAtlas;
@@ -289,7 +289,7 @@ protected:
     int mnMatchesInliers;
 
     //Last Frame, KeyFrame and Relocalisation Info
-    KeyFrame* mpLastKeyFrame;
+    KeyFrame* mpLastKeyFrame = nullptr;
     unsigned int mnLastKeyFrameId;
     unsigned int mnLastRelocFrameId;
     double mTimeStampLost;

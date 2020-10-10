@@ -41,7 +41,7 @@ namespace ORB_SLAM3 {
     void serialize(Archive& ar, const unsigned int version)
     {
         ar & boost::serialization::base_object<GeometricCamera>(*this);
-        ar & const_cast<float&>(precision);
+        ar & precision;
     }
 
     public:
@@ -102,7 +102,7 @@ namespace ORB_SLAM3 {
         friend std::ostream& operator<<(std::ostream& os, const KannalaBrandt8& kb);
         friend std::istream& operator>>(std::istream& is, KannalaBrandt8& kb);
     private:
-        const float precision;
+        float precision = 0.0f;
 
         //Parameters vector corresponds to
         //[fx, fy, cx, cy, k0, k1, k2, k3]
@@ -113,6 +113,6 @@ namespace ORB_SLAM3 {
     };
 }
 
-//BOOST_CLASS_EXPORT_KEY(ORBSLAM2::KannalaBrandt8)
+BOOST_CLASS_EXPORT_KEY(ORB_SLAM3::KannalaBrandt8)
 
 #endif //CAMERAMODELS_KANNALABRANDT8_H

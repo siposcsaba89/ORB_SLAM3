@@ -25,7 +25,7 @@
 #include <g2o/types/sim3/sim3.h>
 
 #include <Eigen/Geometry>
-#include <include/CameraModels/GeometricCamera.h>
+#include <CameraModels/GeometricCamera.h>
 
 namespace ORB_SLAM3 {
 class  EdgeSE3ProjectXYZOnlyPose: public  g2o::BaseUnaryEdge<2, Eigen::Vector2d, g2o::VertexSE3Expmap>{

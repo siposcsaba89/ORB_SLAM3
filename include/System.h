@@ -27,19 +27,19 @@
 #include<stdlib.h>
 #include<string>
 #include<thread>
+#include <iostream>
 #include<opencv2/core/core.hpp>
 
-#include "Tracking.h"
-#include "FrameDrawer.h"
-#include "MapDrawer.h"
-#include "Atlas.h"
-#include "LocalMapping.h"
-#include "LoopClosing.h"
-#include "KeyFrameDatabase.h"
-#include "ORBVocabulary.h"
-#include "Viewer.h"
 #include "ImuTypes.h"
 
+//forward declaring OrbVocabulary required forward declare DBoW2::TemplatedVocabulary
+// helps to reduce compile time
+namespace DBoW2
+{
+    class FORB;
+    template<class TDescriptor, class F>
+    class TemplatedVocabulary;
+}
 
 namespace ORB_SLAM3
 {
@@ -73,10 +73,14 @@ public:
 
 class Viewer;
 class FrameDrawer;
+class MapDrawer;
 class Atlas;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
+class KeyFrameDatabase;
+typedef DBoW2::TemplatedVocabulary<cv::Mat, DBoW2::FORB> ORBVocabulary;
+class MapPoint;
 
 class System
 {
@@ -161,8 +165,8 @@ public:
     void SaveTrajectoryKITTI(const std::string &filename);
 
     // TODO: Save/Load functions
-    // SaveMap(const string &filename);
-    // LoadMap(const string &filename);
+    void SaveMap(const std::string &filename);
+    bool LoadMap(const std::string &filename);
 
     // Information from most recent processed frame
     // You can call this right after TrackMonocular (or stereo or RGBD)
@@ -178,12 +182,12 @@ public:
     void ChangeDataset();
 
     //void SaveAtlas(int type);
+    //bool LoadAtlas(string filename, int type);
 
 private:
 
-    //bool LoadAtlas(string filename, int type);
 
-    //string CalculateCheckSum(string filename, int type);
+    std::string CalculateCheckSum(const std::string & filename, int type);
 
     // Input sensor
     eSensor mSensor;
@@ -237,6 +241,9 @@ private:
     std::vector<MapPoint*> mTrackedMapPoints;
     std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
     std::mutex mMutexState;
+
+    std::string mStrVocabularyFilePath;
+
 };
 
 }// namespace ORB_SLAM

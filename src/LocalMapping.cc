@@ -485,10 +485,10 @@ void LocalMapping::CreateNewMapPoints()
             const int &idx1 = vMatchedIndices[ikp].first;
             const int &idx2 = vMatchedIndices[ikp].second;
 
-            const cv::KeyPoint &kp1 = (mpCurrentKeyFrame -> NLeft == -1) ? mpCurrentKeyFrame->mvKeysUn[idx1]
+            const cv::KeyPoint &kp1 = (mpCurrentKeyFrame -> NLeft == -1 && idx1 < mpCurrentKeyFrame->mvKeysUn.size()) ? mpCurrentKeyFrame->mvKeysUn[idx1]
                                                                          : (idx1 < mpCurrentKeyFrame -> NLeft) ? mpCurrentKeyFrame -> mvKeys[idx1]
                                                                                                                : mpCurrentKeyFrame -> mvKeysRight[idx1 - mpCurrentKeyFrame -> NLeft];
-            const float kp1_ur=mpCurrentKeyFrame->mvuRight[idx1];
+            const float kp1_ur= idx1 < mpCurrentKeyFrame->mvuRight.size() ? mpCurrentKeyFrame->mvuRight[idx1] : -1.0f;
             bool bStereo1 = (!mpCurrentKeyFrame->mpCamera2 && kp1_ur>=0);
             const bool bRight1 = (mpCurrentKeyFrame -> NLeft == -1 || idx1 < mpCurrentKeyFrame -> NLeft) ? false
                                                                                : true;
@@ -497,10 +497,10 @@ void LocalMapping::CreateNewMapPoints()
                                                             : (idx2 < pKF2 -> NLeft) ? pKF2 -> mvKeys[idx2]
                                                                                      : pKF2 -> mvKeysRight[idx2 - pKF2 -> NLeft];
 
-            const float kp2_ur = pKF2->mvuRight[idx2];
-            bool bStereo2 = (!pKF2->mpCamera2 && kp2_ur>=0);
-            const bool bRight2 = (pKF2 -> NLeft == -1 || idx2 < pKF2 -> NLeft) ? false
+            const bool bRight2 = (pKF2 -> NLeft == -1 || idx2 < pKF2 -> NLeft || idx2 >= pKF2->mvuRight.size()) ? false
                                                                                : true;
+            const float kp2_ur = bRight2 ? pKF2->mvuRight[idx2] : -1.0f;
+            bool bStereo2 = (!pKF2->mpCamera2 && kp2_ur>=0);
 
             if(mpCurrentKeyFrame->mpCamera2 && pKF2->mpCamera2){
                 if(bRight1 && bRight2){
@@ -993,7 +993,7 @@ void LocalMapping::KeyFrameCulling()
                 {
                     if(!mbMonocular)
                     {
-                        if(pKF->mvDepth[i]>pKF->mThDepth || pKF->mvDepth[i]<0)
+                        if(i >= pKF->mvDepth.size() ||  pKF->mvDepth[i]>pKF->mThDepth || pKF->mvDepth[i]<0)
                             continue;
                     }
 

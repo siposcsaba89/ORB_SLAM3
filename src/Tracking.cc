@@ -34,9 +34,9 @@
 
 #include<mutex>
 #include<chrono>
-#include <include/CameraModels/Pinhole.h>
-#include <include/CameraModels/KannalaBrandt8.h>
-#include <include/MLPnPsolver.h>
+#include <CameraModels/Pinhole.h>
+#include <CameraModels/KannalaBrandt8.h>
+#include <MLPnPsolver.h>
 
 
 using namespace std;
@@ -1448,7 +1448,7 @@ void Tracking::Track()
         }
     }
 
-
+    
     if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO) && mpLastKeyFrame)
         mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
 
@@ -1489,7 +1489,7 @@ void Tracking::Track()
         mbMapUpdated = true;
     }
 
-
+    
     if(mState==NOT_INITIALIZED)
     {
         if(mSensor==System::STEREO || mSensor==System::RGBD || mSensor==System::IMU_STEREO)
@@ -1512,6 +1512,11 @@ void Tracking::Track()
             mnFirstFrameId = mCurrentFrame.mnId;
         }
     }
+
+
+    //////
+
+
     else
     {
         // System is initialized. Track Frame.
@@ -1701,7 +1706,7 @@ void Tracking::Track()
                 }
             }
         }
-
+        
         if(!mCurrentFrame.mpReferenceKF)
             mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
@@ -1757,7 +1762,7 @@ void Tracking::Track()
                 mTimeStampLost = mCurrentFrame.mTimeStamp;
             }
         }
-
+        
         // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it shluld be once mCurrFrame is completely modified)
         if((mCurrentFrame.mnId<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) && ((mSensor == System::IMU_MONOCULAR) || (mSensor == System::IMU_STEREO)) && pCurrentMap->isImuInitialized())
         {
@@ -1873,12 +1878,10 @@ void Tracking::Track()
 
         if(!mCurrentFrame.mpReferenceKF)
             mCurrentFrame.mpReferenceKF = mpReferenceKF;
-
-        mLastFrame = Frame(mCurrentFrame);
+        
+        mLastFrame = mCurrentFrame;
+        
     }
-
-
-
 
     if(mState==OK || mState==RECENTLY_LOST)
     {
@@ -1991,7 +1994,7 @@ void Tracking::StereoInitialization()
 
         mpLocalMapper->InsertKeyFrame(pKFini);
 
-        mLastFrame = Frame(mCurrentFrame);
+        mLastFrame = mCurrentFrame;
         mnLastKeyFrameId=mCurrentFrame.mnId;
         mpLastKeyFrame = pKFini;
         mnLastRelocFrameId = mCurrentFrame.mnId;
@@ -3099,13 +3102,14 @@ void Tracking::UpdateLocalKeyFrames()
     }
 
     // Include also some not-already-included keyframes that are neighbors to already-included keyframes
-    for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
+    //for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
+    for(size_t i = 0; i < mvpLocalKeyFrames.size(); ++i)
     {
         // Limit the number of keyframes
         if(mvpLocalKeyFrames.size()>80) // 80
             break;
 
-        KeyFrame* pKF = *itKF;
+        KeyFrame* pKF = mvpLocalKeyFrames[i];
 
         const vector<KeyFrame*> vNeighs = pKF->GetBestCovisibilityKeyFrames(10);
 

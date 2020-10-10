@@ -120,10 +120,7 @@ class MapPoint
 
         ar & mfMinDistance;
         ar & mfMaxDistance;
-
     }
-
-
 public:
     MapPoint();
 
