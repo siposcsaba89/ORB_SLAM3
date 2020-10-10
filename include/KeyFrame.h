@@ -122,7 +122,7 @@ class KeyFrame
 
         ar & NumEl;
 
-        vector<cv::KeyPoint> vKPaux = vKP;
+        std::vector<cv::KeyPoint> vKPaux = vKP;
         if (Archive::is_loading::value)
             vKPaux.reserve(NumEl);
 
@@ -151,8 +151,8 @@ class KeyFrame
 
         if (Archive::is_loading::value)
         {
-            vector<cv::KeyPoint> *ptr;
-            ptr = (vector<cv::KeyPoint>*)( &vKP );
+            std::vector<cv::KeyPoint> *ptr;
+            ptr = (std::vector<cv::KeyPoint>*)( &vKP );
             *ptr = vKPaux;
         }
     }
@@ -225,8 +225,8 @@ class KeyFrame
         // KeyPoints
         serializeVectorKeyPoints(ar,mvKeys,version);
         serializeVectorKeyPoints(ar,mvKeysUn,version);
-        ar & const_cast<vector<float>& >(mvuRight);
-        ar & const_cast<vector<float>& >(mvDepth);
+        ar & const_cast<std::vector<float>& >(mvuRight);
+        ar & const_cast<std::vector<float>& >(mvDepth);
         serializeMatrix(ar,mDescriptors,version);
         // BOW
         serializeBowVector(ar, mBowVec, version);
@@ -239,9 +239,9 @@ class KeyFrame
         ar & const_cast<int&>(mnScaleLevels);
         ar & const_cast<float&>(mfScaleFactor);
         ar & const_cast<float&>(mfLogScaleFactor);
-        ar & const_cast<vector<float>& >(mvScaleFactors);
-        ar & const_cast<vector<float>& >(mvLevelSigma2);
-        ar & const_cast<vector<float>& >(mvInvLevelSigma2);
+        ar & const_cast<std::vector<float>& >(mvScaleFactors);
+        ar & const_cast<std::vector<float>& >(mvLevelSigma2);
+        ar & const_cast<std::vector<float>& >(mvInvLevelSigma2);
         // Image bounds and calibration
         ar & const_cast<int&>(mnMinX);
         ar & const_cast<int&>(mnMinY);

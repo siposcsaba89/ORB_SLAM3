@@ -147,6 +147,7 @@ foreach(example IN LISTS ORB_SLAM3_EXAMPLES)
 	message(STATUS "Adding example: ${example}, ${EXAMPLE_CC}")
 	add_executable(${example} ${EXAMPLE_CC})
 	target_link_libraries(${example} PRIVATE ${PROJECT_NAME})
+	set_target_properties(${example} PROPERTIES DEBUG_POSTFIX _d)
 	if (MSVC)
 		#1MB stack size is not enough, which is the default in windows
 		set_target_properties(${example} PROPERTIES LINK_FLAGS /STACK:4194304)
