@@ -124,6 +124,9 @@ int main(int argc, char **argv)
         map_file = argv[8];
     ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_STEREO, true, 0, file_name, map_file);
 
+    if (!map_file.empty())
+        SLAM.ActivateLocalizationMode();
+
     //SLAM.LoadMap("mymap.orbmap");
 
     int proccIm = 0;
@@ -227,8 +230,8 @@ int main(int argc, char **argv)
 
     // Stop all threads
     SLAM.Shutdown();
-
-    SLAM.SaveMap("mymap.orbmap");
+    if (map_file.empty())
+        SLAM.SaveMap("mymap.orbmap");
 
     // Tracking time statistics
 

@@ -130,7 +130,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
         // Load the file with an earlier session
         //clock_t start = clock();
-        mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+        mpKeyFrameDatabase = new KeyFrameDatabase();
         bool isRead = LoadMap(strLoadingFile);
 
         if(!isRead)
@@ -138,7 +138,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
             cout << "Error to load the file, please try with other session file or vocabulary file" << endl;
             exit(-1);
         }
-
+        mpKeyFrameDatabase->SetORBVocabulary(mpVocabulary);
         mpAtlas->SetKeyFrameDababase(mpKeyFrameDatabase);
         mpAtlas->SetORBVocabulary(mpVocabulary);
         mpAtlas->PostLoad();
@@ -888,7 +888,8 @@ bool System::LoadMap(const string& filename)
         //Check if the vocabulary is the same
         string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
 
-        if (strInputVocabularyChecksum.compare(strVocChecksum) != 0)
+        if (false)
+        //if (strInputVocabularyChecksum.compare(strVocChecksum) != 0)
         {
             cout << "The vocabulary load isn't the same which the load session was created " << endl;
             cout << "-Vocabulary name: " << strFileVoc << endl;

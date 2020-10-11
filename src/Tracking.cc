@@ -2381,7 +2381,7 @@ void Tracking::UpdateLastFrame()
     // We sort points according to their measured depth by the stereo/RGB-D sensor
     vector<pair<float,int> > vDepthIdx;
     vDepthIdx.reserve(mLastFrame.N);
-    for(int i=0; i<mLastFrame.N;i++)
+    for(int i=0; i< mLastFrame.mvDepth.size();i++)
     {
         float z = mLastFrame.mvDepth[i];
         if(z>0)

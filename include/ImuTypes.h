@@ -170,10 +170,10 @@ class Preintegrated
             mat.create(rows, cols, type);
 
         if (continuous) {
-            const unsigned int data_size = rows * cols * mat.elemSize();
+            const unsigned int data_size = mat.empty() ? 0 : rows * cols * mat.elemSize();
             ar & boost::serialization::make_array(mat.ptr(), data_size);
         } else {
-            const unsigned int row_size = cols*mat.elemSize();
+            const unsigned int row_size = mat.empty() ? 0 : cols*mat.elemSize();
             for (int i = 0; i < rows; i++) {
                 ar & boost::serialization::make_array(mat.ptr(i), row_size);
             }

@@ -130,7 +130,7 @@ protected:
 
     void ResetIfRequested();
     bool mbResetRequested;
-    bool mbResetRequestedActiveMap;
+    bool mbResetRequestedActiveMap = false;
     Map* mpMapToReset;
     std::mutex mMutexReset;
 
